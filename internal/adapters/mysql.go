@@ -263,7 +263,8 @@ func createMySqlTriggerForTable(tableName string, operation string, cfg config.D
 
 		var columnConcatenation []string
 		for _, column := range columns {
-			columnConcatenation = append(columnConcatenation, fmt.Sprintf("'%s: ', NEW.%s", column, column))
+
+			columnConcatenation = append(columnConcatenation, fmt.Sprintf("'%s: ', IFNULL(NEW.%s, 'NULL')", column, column))
 		}
 
 		triggerInsert := fmt.Sprintf("realtimer_trigger_insert_%s", tableName)
@@ -297,7 +298,7 @@ func createMySqlTriggerForTable(tableName string, operation string, cfg config.D
 
 		var columnConcatenation []string
 		for _, column := range columns {
-			columnConcatenation = append(columnConcatenation, fmt.Sprintf("'%s: ', NEW.%s", column, column))
+			columnConcatenation = append(columnConcatenation, fmt.Sprintf("'%s: ', IFNULL(NEW.%s, 'NULL')", column, column))
 		}
 
 		triggerUpdate := fmt.Sprintf("realtimer_trigger_update_%s", tableName)
@@ -331,7 +332,7 @@ func createMySqlTriggerForTable(tableName string, operation string, cfg config.D
 
 		var columnConcatenation []string
 		for _, column := range columns {
-			columnConcatenation = append(columnConcatenation, fmt.Sprintf("'%s: ', OLD.%s", column, column))
+			columnConcatenation = append(columnConcatenation, fmt.Sprintf("'%s: ', IFNULL(OLD.%s, 'NULL')", column, column))
 		}
 
 		triggerDelete := fmt.Sprintf("realtimer_trigger_delete_%s", tableName)
