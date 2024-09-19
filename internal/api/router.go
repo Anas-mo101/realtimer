@@ -9,34 +9,14 @@ import (
 )
 
 func (s *FiberServer) RegisterFiberRoutes() {
-	s.App.Get("/api/auth", s.authHandler)
-	s.App.Post("/api/db", s.callbackHandler)
+	s.App.Post("/api/db", s.mysqlCallbackHandler)
 
+	s.App.Get("/api/auth", s.authHandler)
 	s.App.Use("/api/ws", authenticateWS)
 	s.App.Get("/api/ws", websocket.New(s.wsHandler))
 }
 
-func (s *FiberServer) authHandler(c *fiber.Ctx) error {
-	id := c.Queries()["id"]
-	if id == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "event param does not exist",
-		})
-	}
-
-	token, err := generateJWT(id)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "event param does not exist",
-		})
-	}
-
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"token": token,
-	})
-}
-
-func (s *FiberServer) callbackHandler(c *fiber.Ctx) error {
+func (s *FiberServer) mysqlCallbackHandler(c *fiber.Ctx) error {
 	event := c.Queries()["event"]
 	if event == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{

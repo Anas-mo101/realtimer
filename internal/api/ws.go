@@ -43,6 +43,26 @@ func authenticateWS(c *fiber.Ctx) error {
 	return c.Next()
 }
 
+func (s *FiberServer) authHandler(c *fiber.Ctx) error {
+	id := c.Queries()["id"]
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "event param does not exist",
+		})
+	}
+
+	token, err := generateJWT(id)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "event param does not exist",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"token": token,
+	})
+}
+
 // WebSocket handler to handle event subscriptions
 func (s *FiberServer) wsHandler(c *websocket.Conn) {
 	defer c.Close()

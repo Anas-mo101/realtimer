@@ -6,9 +6,11 @@ import (
 	"io"
 	"os"
 	"realtimer/internal/config"
+	"realtimer/internal/pubsub"
+	"strings"
 )
 
-func New(cfg config.DBConfig) error {
+func New(cfg config.DBConfig, pubsub *pubsub.SubscriptionManager) error {
 	if cfg.Database.Type == "mysql" {
 		_, err := newMySQL(cfg)
 
@@ -18,7 +20,7 @@ func New(cfg config.DBConfig) error {
 
 		return nil
 	} else if cfg.Database.Type == "postgres" {
-		_, err := newPostgress(cfg)
+		_, err := newPostgress(cfg, pubsub)
 
 		if err != nil {
 			return err
@@ -53,4 +55,17 @@ func copyFile(srcFile string, dstFile string) error {
 	}
 
 	return nil
+}
+
+// Helper function to check if a table is in the config
+func isTableInConfig(triggerName string, tables []config.Table) bool {
+	for _, table := range tables {
+		for _, operation := range table.Operations {
+			tName := fmt.Sprintf("realtimer_trigger_%s_%s", strings.ToLower(operation), table.Name)
+			if tName == triggerName {
+				return true
+			}
+		}
+	}
+	return false
 }

@@ -129,19 +129,6 @@ func dropMySqlTrigger(triggerName, dbName string) error {
 	return nil
 }
 
-// Helper function to check if a table is in the config
-func isTableInConfig(triggerName string, tables []config.Table) bool {
-	for _, table := range tables {
-		for _, operation := range table.Operations {
-			tName := fmt.Sprintf("realtimer_trigger_%s_%s", strings.ToLower(operation), table.Name)
-			if tName == triggerName {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 // +-----------+-----+-------------------------+----------+
 // | name      | ret | dl                      | type     |
 // +-----------+-----+-------------------------+----------+

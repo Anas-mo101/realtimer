@@ -13,8 +13,7 @@ type FiberServer struct {
 	pubsubManager *pubsub.SubscriptionManager
 }
 
-func New(cfg config.DBConfig) *FiberServer {
-	var pubsubManager *pubsub.SubscriptionManager = pubsub.NewSubscriptionManager()
+func New(cfg config.DBConfig, pubsub *pubsub.SubscriptionManager) *FiberServer {
 
 	server := &FiberServer{
 		App: fiber.New(fiber.Config{
@@ -22,7 +21,7 @@ func New(cfg config.DBConfig) *FiberServer {
 			AppName:      "realtimer",
 		}),
 		cfg:           cfg,
-		pubsubManager: pubsubManager,
+		pubsubManager: pubsub,
 	}
 
 	return server

@@ -5,6 +5,7 @@ import (
 	"realtimer/internal/adapters"
 	"realtimer/internal/api"
 	"realtimer/internal/config"
+	"realtimer/internal/pubsub"
 )
 
 func main() {
@@ -13,12 +14,14 @@ func main() {
 		panic(err)
 	}
 
-	err = adapters.New(cfg)
+	var pubsubManager *pubsub.SubscriptionManager = pubsub.NewSubscriptionManager()
+
+	err = adapters.New(cfg, pubsubManager)
 	if err != nil {
 		panic(err)
 	}
 
-	server := api.New(cfg)
+	server := api.New(cfg, pubsubManager)
 	server.RegisterFiberRoutes()
 
 	err = server.Listen(fmt.Sprintf(":%d", cfg.Servers.HTTPPort))
