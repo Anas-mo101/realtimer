@@ -9,7 +9,7 @@ import (
 )
 
 func (s *FiberServer) RegisterFiberRoutes() {
-	s.App.Post("/api/auth", s.authHandler)
+	s.App.Get("/api/auth", s.authHandler)
 	s.App.Post("/api/db", s.callbackHandler)
 
 	s.App.Use("/api/ws", authenticateWS)

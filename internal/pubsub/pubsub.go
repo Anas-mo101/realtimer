@@ -57,8 +57,15 @@ func (s *SubscriptionManager) Publish(topic string, message map[string]string) {
 		return
 	}
 
+	println(string(jsonData))
+	for k := range s.subscribers {
+		println(k)
+	}
+
 	// Send the message to all clients subscribed to this topic
 	for _, sub := range s.subscribers[topic] {
+		println("write")
+
 		if err := sub.Conn.WriteMessage(websocket.TextMessage, jsonData); err != nil {
 			log.Printf("error writing message to topic %s: %v", topic, err)
 		}
