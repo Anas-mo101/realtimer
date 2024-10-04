@@ -22,6 +22,7 @@ type DBConfig struct {
 		Host     string `yaml:"host"`
 		Port     int    `yaml:"port"`
 		Name     string `yaml:"name"`
+		Os       string `yaml:"os"`
 	} `yaml:"database"`
 	Servers struct {
 		WsPort      int    `yaml:"ws_port"`

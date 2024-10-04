@@ -42,9 +42,8 @@ func (s *FiberServer) mysqlCallbackHandler(c *fiber.Ctx) error {
 	}
 
 	/// push keyValueEntries to ws connection
-
 	topic := fmt.Sprintf("%s:%s", strings.ToLower(event), table)
-	s.pubsubManager.Publish(topic, keyValueEntries)
+	go s.pubsubManager.Publish(topic, keyValueEntries)
 
 	return nil
 }

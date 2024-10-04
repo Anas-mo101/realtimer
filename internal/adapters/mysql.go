@@ -3,16 +3,14 @@ package adapters
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"io"
+	"os"
 	"realtimer/internal/config"
-	"runtime"
 	"strconv"
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
 )
-
-var mysqldb *sql.DB
 
 func newMySQL(cfg config.DBConfig) (*sql.DB, error) {
 	// Capture connection properties.
@@ -31,14 +29,14 @@ func newMySQL(cfg config.DBConfig) (*sql.DB, error) {
 
 	// Get a database handle.
 	var err error
-	mysqldb, err = sql.Open("mysql", mysqlConfig.FormatDSN())
+	db, err = sql.Open("mysql", mysqlConfig.FormatDSN())
 	if err != nil {
 		return nil, err
 	}
 
 	fmt.Println("ping db")
 
-	pingErr := mysqldb.Ping()
+	pingErr := db.Ping()
 	if pingErr != nil {
 		fmt.Println(pingErr.Error())
 
@@ -47,7 +45,7 @@ func newMySQL(cfg config.DBConfig) (*sql.DB, error) {
 
 	fmt.Println("init plugin")
 
-	err = initMySQLPlugin()
+	err = initMySQLPlugin(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -59,11 +57,11 @@ func newMySQL(cfg config.DBConfig) (*sql.DB, error) {
 		return nil, err
 	}
 
-	return mysqldb, nil
+	return db, nil
 }
 
 func initMySqlTriggers(cfg config.DBConfig) error {
-	rows, err := mysqldb.Query("SELECT trigger_name FROM information_schema.triggers WHERE trigger_name LIKE 'realtimer_trigger_%';")
+	rows, err := db.Query("SELECT trigger_name FROM information_schema.triggers WHERE trigger_name LIKE 'realtimer_trigger_%';")
 	if err != nil {
 		return err
 	}
@@ -122,7 +120,7 @@ func initMySqlTriggers(cfg config.DBConfig) error {
 func dropMySqlTrigger(triggerName, dbName string) error {
 	dropTriggerQuery := fmt.Sprintf("DROP TRIGGER IF EXISTS %s.%s", dbName, triggerName)
 
-	_, err := mysqldb.Exec(dropTriggerQuery)
+	_, err := db.Exec(dropTriggerQuery)
 	if err != nil {
 		return err
 	}
@@ -141,12 +139,12 @@ func dropMySqlTrigger(triggerName, dbName string) error {
 // | plugin_dir    | C:\xampp\mysql\lib\plugin\ |
 // +---------------+----------------------------+
 
-func initMySQLPlugin() error {
+func initMySQLPlugin(cfg config.DBConfig) error {
 	// Query to show active plugins
 	showFunctionQuery := `SELECT * FROM mysql.func WHERE name = 'http_post';`
 
 	// Execute the query to retrieve active plugins
-	rows, err := mysqldb.Query(showFunctionQuery)
+	rows, err := db.Query(showFunctionQuery)
 	if err != nil {
 		return fmt.Errorf("error finding function: %w", err)
 	}
@@ -183,7 +181,7 @@ func initMySQLPlugin() error {
 	pluginDirQuery := `SHOW VARIABLES LIKE 'plugin_dir'`
 
 	// Execute the query to retrieve the plugin directory
-	row := mysqldb.QueryRow(pluginDirQuery)
+	row := db.QueryRow(pluginDirQuery)
 
 	var variableName string
 	var pluginDir string
@@ -202,7 +200,7 @@ func initMySQLPlugin() error {
 
 	var ext string = "so"
 	srcFile := "udf/build/realtimer_requester.so"
-	if runtime.GOOS == "windows" {
+	if cfg.Database.Os == "windows" {
 		ext = "dll"
 		srcFile = "udf/build/realtimer_requester.dll"
 	}
@@ -216,9 +214,34 @@ func initMySQLPlugin() error {
 	}
 
 	pluginInstallQuery := fmt.Sprintf(`CREATE FUNCTION http_post RETURNS STRING SONAME 'realtimer_requester.%s';`, ext)
-	mysqldb.QueryRow(pluginInstallQuery)
+	db.QueryRow(pluginInstallQuery)
 
 	// Plugin directory found successfully, return it
+	return nil
+}
+
+// copyFile copies a file from src to dst.
+func copyFile(srcFile string, dstFile string) error {
+	// Open the source file
+	src, err := os.Open(srcFile)
+	if err != nil {
+		return fmt.Errorf("failed to open source file: %w", err)
+	}
+	defer src.Close()
+
+	// Create the destination file
+	dst, err := os.Create(dstFile)
+	if err != nil {
+		return fmt.Errorf("failed to create destination file: %w", err)
+	}
+	defer dst.Close()
+
+	// Copy the contents from source to destination
+	_, err = io.Copy(dst, src)
+	if err != nil {
+		return fmt.Errorf("failed to copy file contents: %w", err)
+	}
+
 	return nil
 }
 
@@ -231,7 +254,7 @@ func createMySqlTriggerForTable(tableName string, operation string, cfg config.D
 		WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s';
 	`, cfg.Database.Name, tableName)
 
-	cols, err := mysqldb.Query(columnsQuery)
+	cols, err := db.Query(columnsQuery)
 	if err != nil {
 		return fmt.Errorf("error failed: %e", err)
 	}
@@ -241,7 +264,7 @@ func createMySqlTriggerForTable(tableName string, operation string, cfg config.D
 	for cols.Next() {
 		var column string
 		if err := cols.Scan(&column); err != nil {
-			log.Fatal(err)
+			return err
 		}
 		columns = append(columns, column)
 	}
@@ -276,7 +299,7 @@ func createMySqlTriggerForTable(tableName string, operation string, cfg config.D
 		)
 
 		// Execute the INSERT trigger creation
-		_, err := mysqldb.Exec(insertTriggerQuery)
+		_, err := db.Exec(insertTriggerQuery)
 		if err != nil {
 			return fmt.Errorf("error creating insert trigger: %w", err)
 		}
@@ -310,7 +333,7 @@ func createMySqlTriggerForTable(tableName string, operation string, cfg config.D
 		)
 
 		// Execute the UPDATE trigger creation
-		_, err := mysqldb.Exec(updateTriggerQuery)
+		_, err := db.Exec(updateTriggerQuery)
 		if err != nil {
 			return fmt.Errorf("error creating update trigger: %w", err)
 		}
@@ -344,7 +367,7 @@ func createMySqlTriggerForTable(tableName string, operation string, cfg config.D
 		)
 
 		// Execute the DELETE trigger creation
-		_, err := mysqldb.Exec(deleteTriggerQuery)
+		_, err := db.Exec(deleteTriggerQuery)
 		if err != nil {
 			return fmt.Errorf("error creating delete trigger: %w", err)
 		}
