@@ -5,13 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"realtimer/internal/config"
-	"realtimer/internal/pubsub"
 	"strings"
 )
 
 var db *sql.DB
 
-func New(cfg config.DBConfig, pubsub *pubsub.SubscriptionManager) error {
+func New(cfg config.DBConfig) error {
 	if cfg.Database.Type == "mysql" {
 		_, err := newMySQL(cfg)
 

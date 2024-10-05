@@ -22,3 +22,7 @@ Workflow: parse config -> connect to db -> create/verfiy triggers -> listen to c
 
 build udf
  - gcc $(dir of mysql.h) -shared -fPIC -o http_request.so http_request.c
+
+test w/ postgres
+ - docker run --name pgtest -e POSTGRES_PASSWORD=pgpass -e POSTGRES_USER=pguser -e POSTGRES_DB=postgres -p 5432:5432 -d postgres
+ - docker run --name pgadmin -e PGADMIN_DEFAULT_PASSWORD=pgpass -e PGADMIN_DEFAULT_EMAIL=pguser -d dpage/pgadmin4

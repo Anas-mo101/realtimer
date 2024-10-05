@@ -1,27 +1,19 @@
 # Server configurations
 tables:
-  - name: "bookings"
+  - name: "schedule"
     operations: 
       - INSERT
-      - DELETE
-  - name: "options"
-    operations: 
-      - INSERT  
-      - UPDATE
-  - name: "categories"
-    operations: 
-      - INSERT  
       - DELETE
 
 # Database credentials
 database:
-  type: "mysql"
-  username: "tanyjewas"
-  password: "03)Ag6(3.8Jj14tO"
+  type: "postgres"
+  username: "postgres"
+  password: "changeme"
   host: "localhost"
-  port: 3306
-  name: "test"
-  os: "windows"
+  port: 5432
+  name: "scheduler"
+  os: "linux"
 
 servers: 
   ws_port: 3030

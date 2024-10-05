@@ -13,11 +13,13 @@ import (
 	"realtimer/internal/config"
 	"strconv"
 	"strings"
+
+	_ "github.com/lib/pq"
 )
 
 func newPostgresAdapter(cfg config.DBConfig) (*sql.DB, error) {
 
-	host := fmt.Sprintf("%s:%s", cfg.Database.Host, cfg.Database.Host)
+	host := fmt.Sprintf("%s:%s", cfg.Database.Host, strconv.Itoa(cfg.Database.Port))
 
 	dsn := url.URL{
 		Scheme: "postgres",
@@ -34,7 +36,7 @@ func newPostgresAdapter(cfg config.DBConfig) (*sql.DB, error) {
 	dsn.RawQuery = q.Encode()
 
 	var err error
-	db, err := sql.Open("postgres", dsn.String())
+	db, err = sql.Open("postgres", dsn.String())
 	if err != nil {
 		return nil, err
 	}
@@ -53,8 +55,15 @@ func newPostgresAdapter(cfg config.DBConfig) (*sql.DB, error) {
 }
 
 func initPGPlugin(cfg config.DBConfig) error {
+	var extname string
+	err := db.QueryRow("SELECT extname FROM pg_extension WHERE extname = 'http';").Scan(&extname)
+	fmt.Println("extention: ", extname)
+	if extname == "http" && err != nil {
+		return nil
+	}
+
 	var version string
-	err := db.QueryRow("SHOW server_version;").Scan(&version)
+	err = db.QueryRow("SHOW server_version;").Scan(&version)
 	if err != nil {
 		return fmt.Errorf("failed to get PostgreSQL version: %w", err)
 	}

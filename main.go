@@ -16,7 +16,7 @@ func main() {
 
 	var pubsubManager *pubsub.SubscriptionManager = pubsub.NewSubscriptionManager()
 
-	err = adapters.New(cfg, pubsubManager)
+	err = adapters.New(cfg)
 	if err != nil {
 		panic(err)
 	}

@@ -1,0 +1,30 @@
+# Server configurations
+tables:
+  - name: "bookings"
+    operations: 
+      - INSERT
+      - DELETE
+  - name: "options"
+    operations: 
+      - INSERT  
+      - UPDATE
+  - name: "categories"
+    operations: 
+      - INSERT  
+      - DELETE
+
+# Database credentials
+database:
+  type: "mysql"
+  username: "tanyjewas"
+  password: "03)Ag6(3.8Jj14tO"
+  host: "localhost"
+  port: 3306
+  name: "test"
+  os: "windows"
+
+servers: 
+  ws_port: 3030
+  ws_base_url: "http://localhost"
+  http_port: 8080
+  http_base_url: "http://localhost"
