@@ -191,87 +191,6 @@ func httpRaw(method string, url string, contentType string, body string, options
 	return string(jBuffer.Bytes()), nil
 }
 
-//export http_raw_init
-func http_raw_init(initid *C.UDF_INIT, args *C.UDF_ARGS, message *C.char) C.bool {
-	if args.arg_count < 3 {
-		msg := `
-		http_raw(method string, url string, body string, option ...string) requires method, url, body argment
-		` + optionDescription
-		C.strcpy(message, C.CString(msg))
-		return true
-	}
-	return false
-}
-
-//export http_raw
-func http_raw(initid *C.UDF_INIT, args *C.UDF_ARGS, result *C.char, length *uint64,
-	null_value *C.char, message *C.char) *C.char {
-	gArg_count := uint(args.arg_count)
-
-	var ret string
-	var err error
-	gArgs := ((*[arrLength]*C.char)(unsafe.Pointer(args.args)))[:gArg_count:gArg_count]
-	method := C.GoString(*args.args)
-	switch method {
-	case "GET":
-		if gArg_count == 3 {
-			ret, err = httpRaw(method, C.GoString(gArgs[1]), "", "", nil)
-		} else {
-			ret, err = httpRaw(method, C.GoString(gArgs[1]), "", "", gArgs[3:])
-		}
-	default:
-		if gArg_count == 3 {
-			ret, err = httpRaw(method, C.GoString(gArgs[1]), "", C.GoString(gArgs[2]), nil)
-		} else {
-			ret, err = httpRaw(method, C.GoString(gArgs[1]), "", C.GoString(gArgs[2]), gArgs[3:])
-		}
-	}
-
-	if err != nil {
-		ret = err.Error()
-	}
-
-	result = C.CString(ret)
-	*length = uint64(utf8.RuneCountInString(ret))
-	return result
-}
-
-//export http_get_init
-func http_get_init(initid *C.UDF_INIT, args *C.UDF_ARGS, message *C.char) C.bool {
-	if args.arg_count == 0 {
-		msg := `
-		http_get(url string, option ...string) requires url argment
-		` + optionDescription
-		C.strcpy(message, C.CString(msg))
-		return true
-	}
-
-	return false
-}
-
-//export http_get
-func http_get(initid *C.UDF_INIT, args *C.UDF_ARGS, result *C.char, length *uint64,
-	null_value *C.char, message *C.char) *C.char {
-	gArg_count := uint(args.arg_count)
-
-	var ret string
-	var err error
-	if gArg_count == 1 {
-		ret, err = httpRaw("GET", C.GoString(*args.args), "", "", nil)
-	} else {
-		gArgs := ((*[arrLength]*C.char)(unsafe.Pointer(args.args)))[:gArg_count:gArg_count]
-		ret, err = httpRaw("GET", C.GoString(*args.args), "", "", gArgs[1:])
-	}
-
-	if err != nil {
-		ret = err.Error()
-	}
-
-	result = C.CString(ret)
-	*length = uint64(utf8.RuneCountInString(ret))
-	return result
-}
-
 //export http_post_init
 func http_post_init(initid *C.UDF_INIT, args *C.UDF_ARGS, message *C.char) C.bool {
 	if args.arg_count < 3 {
@@ -304,28 +223,6 @@ func http_post(initid *C.UDF_INIT, args *C.UDF_ARGS, result *C.char, length *uin
 
 	result = C.CString(ret)
 	*length = uint64(utf8.RuneCountInString(ret))
-	return result
-}
-
-//export http_help_init
-func http_help_init(initid *C.UDF_INIT, args *C.UDF_ARGS, message *C.char) C.bool {
-	return false
-}
-
-//export http_help
-func http_help(initid *C.UDF_INIT, args *C.UDF_ARGS, result *C.char, length *uint64,
-	null_value *C.char, message *C.char) *C.char {
-
-	msg := `
-	Method List.
-	http_raw(method string, url string, body string, option ...string) requires method, url, body argment
-	http_get(url string, option ...string) requires url argment
-	http_post(url string, contentType string, body string, option ...string) requires url, contentType, body argment
-
-	` + optionDescription
-
-	result = C.CString(msg)
-	*length = uint64(utf8.RuneCountInString(msg))
 	return result
 }
 

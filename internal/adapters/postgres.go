@@ -41,9 +41,16 @@ func newPostgresAdapter(cfg config.DBConfig) (*sql.DB, error) {
 		return nil, err
 	}
 
-	err = initPGPlugin(cfg)
-	if err != nil {
-		return nil, err
+	if !cfg.Servers.IsRemote {
+		exist, perr := doesPostgresExtentionExist()
+		if exist {
+			return nil, perr
+		}
+	} else {
+		err = initPGPlugin(cfg)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	err = initPostgresTrigger(cfg)
@@ -54,16 +61,29 @@ func newPostgresAdapter(cfg config.DBConfig) (*sql.DB, error) {
 	return db, nil
 }
 
-func initPGPlugin(cfg config.DBConfig) error {
+func doesPostgresExtentionExist() (bool, error) {
 	var extname string
 	err := db.QueryRow("SELECT extname FROM pg_extension WHERE extname = 'http';").Scan(&extname)
 	fmt.Println("extention: ", extname)
-	if extname == "http" && err != nil {
+	if err != nil {
+		return false, err
+	}
+
+	if extname != "http" {
+		return false, fmt.Errorf("postgres http extention does not exist")
+	}
+
+	return true, nil
+}
+
+func initPGPlugin(cfg config.DBConfig) error {
+	exist, _ := doesPostgresExtentionExist()
+	if exist {
 		return nil
 	}
 
 	var version string
-	err = db.QueryRow("SHOW server_version;").Scan(&version)
+	err := db.QueryRow("SHOW server_version;").Scan(&version)
 	if err != nil {
 		return fmt.Errorf("failed to get PostgreSQL version: %w", err)
 	}

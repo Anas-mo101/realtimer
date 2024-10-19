@@ -43,11 +43,17 @@ func newMySQL(cfg config.DBConfig) (*sql.DB, error) {
 		return nil, err
 	}
 
-	fmt.Println("init plugin")
-
-	err = initMySQLPlugin(cfg)
-	if err != nil {
-		return nil, err
+	if !cfg.Servers.IsRemote {
+		exist, perr := doesMySQLPluginExist()
+		if !exist {
+			return nil, perr
+		}
+	} else {
+		fmt.Println("init plugin")
+		err = initMySQLPlugin(cfg)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	fmt.Println("init trigger")
@@ -139,14 +145,14 @@ func dropMySqlTrigger(triggerName, dbName string) error {
 // | plugin_dir    | C:\xampp\mysql\lib\plugin\ |
 // +---------------+----------------------------+
 
-func initMySQLPlugin(cfg config.DBConfig) error {
+func doesMySQLPluginExist() (bool, error) {
 	// Query to show active plugins
 	showFunctionQuery := `SELECT * FROM mysql.func WHERE name = 'http_post';`
 
 	// Execute the query to retrieve active plugins
 	rows, err := db.Query(showFunctionQuery)
 	if err != nil {
-		return fmt.Errorf("error finding function: %w", err)
+		return false, fmt.Errorf("error finding function: %w", err)
 	}
 	defer rows.Close()
 
@@ -162,7 +168,7 @@ func initMySQLPlugin(cfg config.DBConfig) error {
 	for rows.Next() {
 		err = rows.Scan(&name, &ret, &dll, &Ttype)
 		if err != nil {
-			return fmt.Errorf("error scanning plugin row: %w", err)
+			return false, fmt.Errorf("error scanning plugin row: %w", err)
 		}
 
 		if name == "http_post" {
@@ -172,6 +178,15 @@ func initMySQLPlugin(cfg config.DBConfig) error {
 	}
 
 	if pluginFound {
+		return true, nil
+	}
+
+	return false, fmt.Errorf("plugin does not exist")
+}
+
+func initMySQLPlugin(cfg config.DBConfig) error {
+	exist, _ := doesMySQLPluginExist()
+	if exist {
 		return nil
 	}
 
@@ -187,7 +202,7 @@ func initMySQLPlugin(cfg config.DBConfig) error {
 	var pluginDir string
 
 	// Scan the result into variableName and pluginDir
-	err = row.Scan(&variableName, &pluginDir)
+	err := row.Scan(&variableName, &pluginDir)
 	if err != nil {
 		return fmt.Errorf("error finding plugin directory: %w", err)
 	}

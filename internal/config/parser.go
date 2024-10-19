@@ -29,6 +29,7 @@ type DBConfig struct {
 		HTTPPort    int    `yaml:"http_port"`
 		WsBaseUrl   string `yaml:"ws_base_url"`
 		HttpBaseUrl string `yaml:"http_base_url"`
+		IsRemote    bool   `yaml:"is_remote"`
 	} `yaml:"servers"`
 }
 

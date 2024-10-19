@@ -20,3 +20,4 @@ servers:
   ws_base_url: "http://localhost"
   http_port: 8080
   http_base_url: "http://localhost"
+  is_remote: false
